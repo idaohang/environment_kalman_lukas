@@ -30,15 +30,15 @@ public:
     //! Curvature of the center line
     static constexpr size_t C0 = 5;
     //! Change of curvature of the center line
-    static constexpr size_t C1 = 5;
+    static constexpr size_t C1 = 6;
     //! Angle between the x axis of the car and the same fixed global COSY
-    static constexpr size_t THETA = 5;
+    static constexpr size_t THETA = 7;
     //! Angular velocity of the car
-    static constexpr size_t OMEGA = 5;
+    static constexpr size_t OMEGA = 8;
     //! Angle between the car x axis and the vector of the velocity of the car
-    static constexpr size_t ALPHA = 5;
+    static constexpr size_t ALPHA = 9;
     //! Angular velocity of the vector above (relative to the car)
-    static constexpr size_t ALPHADOT = 5;
+    static constexpr size_t ALPHADOT = 10;
 
     T u()       const { return (*this)[ U ]; }
     T a()       const { return (*this)[ A ]; }
@@ -125,6 +125,22 @@ public:
         //! Predicted state vector after transition
         S x_;
 
+        //
+        T dt = u.dt();
+        T ds_preCalc = ds(x, u);
+        T dd_preCalc = dd(x, u);
+
+        x_.u() = x.u() + x.a()*dt; //new velocity
+        x_.a() = x.a(); //constant acceleration
+        x_.s() = x.s() + ds_preCalc; //s_new = s_old + ds
+        x_.d() = x.d() + dd_preCalc;
+        x_.phi() = x.phi() + x.c0*ds_preCalc + 0.5*x.c1()*pow(ds_preCalc, 2); //2 times integrated
+        x_.c0() = x.c0() + x.c1() * ds_preCalc; //linear curvature
+        x_.c1() = x.c1(); //linear curvature
+        x_.theta() = x.theta() + x.w() * dt;
+        x_.w() = x.w();
+        x_.alpha() = x.alpha() + x.alphadot()*dt;
+        x_.alphadot() = x.alphadot();
 
 
         // Return transitioned state vector
